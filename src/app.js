@@ -4,6 +4,8 @@ const connectDB = require("./config/database.js");
 const app = express();
 
 app.use(express.json());
+
+// post api for post user data
 app.post("/signup", async (req, res) => {
   const user = new User(req.body);
 
@@ -37,6 +39,32 @@ app.get("/feed", async (req, res) => {
   try {
     const user = await User.find({});
     res.send(user);
+  } catch (err) {
+    res.status(404).send("Something went wrong");
+  }
+});
+
+// Delete Api for findByIdAndDelete
+app.delete("/user", async (req, res) => {
+  const userId = req.body.userId;
+
+  try {
+    const user = await User.findByIdAndDelete({ _id: userId });
+
+    res.send("User deleted successfully" + user);
+  } catch (err) {
+    res.status(404).send("Something went wrong");
+  }
+});
+
+// FindByID and Update using PATCH
+app.patch("/user", async (req, res) => {
+  const userId = req.body.userId;
+  const data = req.body;
+
+  try {
+    const user = await User.findByIdAndUpdate({ _id: userId }, data);
+    res.send("User Updated Succesfully " + user);
   } catch (err) {
     res.status(404).send("Something went wrong");
   }
