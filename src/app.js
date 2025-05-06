@@ -1,19 +1,56 @@
 const express = require("express");
 const User = require("./models/user.js");
 const connectDB = require("./config/database.js");
+const { validateDataSignUp } = require("./utils/validation.js");
+const bcrypt = require("bcrypt");
 const app = express();
 
 app.use(express.json());
 
 // post api for post user data
 app.post("/signup", async (req, res) => {
-  const user = new User(req.body);
-
   try {
+    // Validate the user
+    validateDataSignUp(req);
+
+    const { firstName, lastName, emailId, password } = req.body;
+
+    // Encrpyt the password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // creating the new instance of the user model
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+
     await user.save();
     res.send("User Added Successfully");
   } catch (err) {
-    res.send("Error while saving the data :" + err.message);
+    res.send("Error: " + err.message);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (isPasswordValid) {
+      res.send("Login Succesfull");
+    }else {
+      res.send("Login Unsuccessfull, Wrong Password");
+    }
+  } catch (err) {
+    res.send("Error: " + err.message);
   }
 });
 
