@@ -4,7 +4,11 @@ const connectDB = require("./config/database.js");
 const { validateDataSignUp } = require("./utils/validation.js");
 const bcrypt = require("bcrypt");
 const app = express();
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const userAuth = require("./middlewares/auth.js");
 
+app.use(cookieParser());
 app.use(express.json());
 
 // post api for post user data
@@ -13,7 +17,7 @@ app.post("/signup", async (req, res) => {
     // Validate the user
     validateDataSignUp(req);
 
-    const { firstName, lastName, emailId, password } = req.body;
+    const { firstName, lastName, emailId, password, age, gender } = req.body;
 
     // Encrpyt the password
     const passwordHash = await bcrypt.hash(password, 10);
@@ -24,6 +28,8 @@ app.post("/signup", async (req, res) => {
       lastName,
       emailId,
       password: passwordHash,
+      age,
+      gender,
     });
 
     await user.save();
@@ -33,6 +39,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+// post api for login user
 app.post("/login", async (req, res) => {
   try {
     const { emailId, password } = req.body;
@@ -42,11 +49,15 @@ app.post("/login", async (req, res) => {
       throw new Error("User not found");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.getPassword(password);
 
     if (isPasswordValid) {
+      const token = await user.getJWT();
+
+      res.cookie("token", token, new Date(Date.now() + 8 * 3600000));
+
       res.send("Login Succesfull");
-    }else {
+    } else {
       res.send("Login Unsuccessfull, Wrong Password");
     }
   } catch (err) {
@@ -54,81 +65,20 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// get user by email
-app.get("/user", async (req, res) => {
-  const userMail = req.body.emailId;
+// get api for profile
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const user = await User.findOne({ emailId: userMail });
-    if (!user) {
-      res.status(404).send("Something went wrong");
-    } else {
-      res.send(user);
-    }
-  } catch (err) {
-    res.status(404).send("Something Went Wrong");
-  }
-});
+    const user = user;
 
-//Feed API -> get all the user/data by email
-app.get("/feed", async (req, res) => {
-  const userMail = req.body.emailId;
-
-  try {
-    const user = await User.find({});
     res.send(user);
   } catch (err) {
-    res.status(404).send("Something went wrong");
+    res.send("Error: " + err.message);
   }
 });
 
-// Delete Api for findByIdAndDelete
-app.delete("/user", async (req, res) => {
-  const userId = req.body.userId;
-
-  try {
-    const user = await User.findByIdAndDelete({ _id: userId });
-
-    res.send("User deleted successfully" + user);
-  } catch (err) {
-    res.status(404).send("Something went wrong");
-  }
-});
-
-// FindByID and Update using PATCH
-app.patch("/user/:userId", async (req, res) => {
-  const userId = req.params?.userId;
-  const data = req.body;
-
-  try {
-    // Api Level Validation
-    const Allowed_Updates = [
-      "password",
-      "age",
-      "gender",
-      "photoUrl",
-      "about",
-      "skills",
-    ];
-
-    const isUpdateAllowed = Object.keys(data).every((k) =>
-      Allowed_Updates.includes(k)
-    );
-
-    if (!isUpdateAllowed) {
-      throw new Error("Update not allowed");
-    }
-
-    if (data?.skills.length > 10) {
-      throw new Error("Skills cannot be more than 10");
-    }
-
-    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
-      runValidators: true,
-    });
-    res.send("User Updated Succesfully " + user);
-  } catch (err) {
-    res.status(404).send("Something went wrong" + err);
-  }
+// get user by email
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  res.send("Sent connection Request");
 });
 
 connectDB()
