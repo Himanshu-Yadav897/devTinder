@@ -3,7 +3,6 @@ const User = require("../models/user.js");
 const { validateDataSignUp } = require("../utils/validation.js");
 const bcrypt = require("bcrypt");
 
-
 const authRouter = express.Router();
 
 // post api for post user data
@@ -58,6 +57,14 @@ authRouter.post("/login", async (req, res) => {
   } catch (err) {
     res.send("Error: " + err.message);
   }
+});
+
+authRouter.post("/logout", async (req, res) => {
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+  });
+
+  res.send("Logout Succesfull");
 });
 
 module.exports = authRouter;
