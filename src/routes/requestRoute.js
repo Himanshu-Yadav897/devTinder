@@ -4,6 +4,7 @@ const requestRouter = express.Router();
 const userAuth = require("../middlewares/auth.js");
 const User = require("../models/user.js");
 
+// Request Api for request/send/:status/:toUserId
 requestRouter.post(
   "/request/send/:status/:toUserId",
   userAuth,
@@ -50,6 +51,44 @@ requestRouter.post(
       });
     } catch (err) {
       res.send("Error : " + err.message);
+    }
+  }
+);
+
+requestRouter.post(
+  "/request/review/:status/:requestId",
+  userAuth,
+  async (req, res) => {
+    try {
+      // validate that allowed status
+      const loggedInUser = req.user;
+      const { status, requestId } = req.params;
+
+      const allowedStatus = ["accepted", "rejected"];
+      if (!allowedStatus.includes(status)) {
+        throw new Error("Status type is wrong , you dummy");
+      }
+
+      const connectionRequest = await ConnectionRequestModel.findOne({
+        _id: requestId,
+        toUserId: loggedInUser._id,
+        status: "interested",
+      });
+
+      if (!connectionRequest) {
+        throw new Error("Connection Request does not exist");
+      }
+
+      connectionRequest.status = status;
+      const data = await connectionRequest.save();
+      res.json({
+        message: "You accepted the request",
+        data,
+      });
+    } catch (err) {
+      res.status(400).json({
+        message: "The problem is in request/review/:status/:requestId",
+      });
     }
   }
 );
