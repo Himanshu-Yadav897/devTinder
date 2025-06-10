@@ -2,7 +2,7 @@ const express = require("express");
 const userAuth = require("../middlewares/auth");
 const ConnectionRequestModel = require("../models/connectionRequest");
 const userRouter = express.Router();
-const USER_SAFE_DATA = "firstName lastName age gender skills about";
+const USER_SAFE_DATA = "firstName lastName age gender skills about photoUrl";
 const User = require("../models/user");
 
 // userRoute Api for get all the pending request
