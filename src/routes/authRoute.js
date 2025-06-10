@@ -52,10 +52,10 @@ authRouter.post("/login", async (req, res) => {
 
       res.send(user);
     } else {
-      res.send("Login Unsuccessfull, Wrong Password");
+      res.status(401).json({ message: "Wrong password" });
     }
   } catch (err) {
-    res.send("Error: " + err.message);
+    res.status(500).json({ message: "Server error: " + err.message });
   }
 });
 
