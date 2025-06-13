@@ -31,16 +31,18 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
       user[key] = req.body[key];
     });
 
-    user.save();
+    await user.save();
 
     res.json({
       message: `${user.firstName} your data has been updated`,
       data: user,
     });
   } catch (err) {
-    res.send("Error : " + err.message);
+    res.status(400).send("ERROR : " + err.message);
   }
 });
+
+
 
 profileRouter.patch("/profile/password", userAuth, async (req, res) => {
   try {
