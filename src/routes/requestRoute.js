@@ -5,6 +5,8 @@ const userAuth = require("../middlewares/auth.js");
 const User = require("../models/user.js");
 
 // Request Api for request/send/:status/:toUserId
+const sendEmail = require("../utils/sendEmail.js");
+
 requestRouter.post(
   "/request/send/:status/:toUserId",
   userAuth,
@@ -43,6 +45,14 @@ requestRouter.post(
         toUserId,
         status,
       });
+
+      console.log("email is about to send");
+
+      const emailRes = await sendEmail.run(
+        "A new request from " + req.user.firstName,
+        req.user.firstName + " is " + status + " in " + toUser.firstName
+      );
+      console.log("Email response:", emailRes);
 
       const data = await connectionRequestModel.save();
       res.json({
